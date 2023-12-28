@@ -2,6 +2,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const app = express();
+const userRoute = require("./routes/user-routes.js");
 
 app.use(
   cors({
@@ -28,5 +29,7 @@ app.get("/", function (req, res) {
     message: "hii",
   });
 });
+
+app.use("/user", userRoute);
 
 module.exports = app;
