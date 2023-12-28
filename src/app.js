@@ -3,6 +3,7 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const app = express();
 const userRoute = require("./routes/user-routes.js");
+const employerRoute = require("./routes/employer-routes.js");
 
 app.use(
   cors({
@@ -31,5 +32,6 @@ app.get("/", function (req, res) {
 });
 
 app.use("/user", userRoute);
+app.use("/employer", employerRoute);
 
 module.exports = app;

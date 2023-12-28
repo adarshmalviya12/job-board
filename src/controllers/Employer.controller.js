@@ -1,10 +1,9 @@
-const User = require("../models/User.model.js");
+const Employer = require("../models/Employer.model");
 
 const register = async (req, res, next) => {
   const { firstName, lastName, email, password } = req.body;
 
-  //validate fileds
-
+  //validate fields
   if (!firstName) {
     next("First Name is required");
   }
@@ -19,14 +18,15 @@ const register = async (req, res, next) => {
   }
 
   try {
-    const userExist = await User.findOne({ email });
+    const accountExist = await Employer.findOne({ email });
 
-    if (userExist) {
-      next("Email Address already exists");
+    if (accountExist) {
+      next("Email Already Registered. Please Login");
       return;
     }
 
-    const user = await User.create({
+    // create a new account
+    const employer = await Employer.create({
       firstName,
       lastName,
       email,
@@ -34,17 +34,16 @@ const register = async (req, res, next) => {
     });
 
     // user token
-    const token = await user.createJWT();
+    const token = employer.createJWT();
 
-    res.status(201).send({
+    res.status(201).json({
       success: true,
-      message: "Account created successfully",
+      message: "Employer Account Created Successfully",
       user: {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
+        _id: employer._id,
+        name: employer.firstName,
+        email: employer.email,
+        role: employer.role,
       },
       token,
     });
@@ -58,40 +57,34 @@ const signIn = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
-    //validation
     if (!email || !password) {
-      next("Please Provide a User Credentials");
+      next("please Provide a User Credentials");
       return;
     }
 
-    // find user by email
-    const user = await User.findOne({ email }).select("+password");
+    const employer = await Employer.findOne({ email }).select("+password");
 
-    if (!user) {
-      next("Invalid email or password");
+    if (!employer) {
+      next("Invalid email or passsword");
       return;
     }
 
-    // compare password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await employer.comparePassword(password);
 
     if (!isMatch) {
       next("Invalid email or password");
       return;
     }
+    employer.password = undefined;
+    const token = employer.createJWT();
 
-    user.password = undefined;
-
-    const token = user.createJWT();
-
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Login successfully",
-      user,
+      employer,
       token,
     });
   } catch (error) {
-    console.log(error);
     res.status(404).json({ message: error.message });
   }
 };
