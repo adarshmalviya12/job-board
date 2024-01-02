@@ -4,6 +4,7 @@ const cors = require("cors");
 const app = express();
 const userRoute = require("./routes/user-routes.js");
 const employerRoute = require("./routes/employer-routes.js");
+const errorMiddleware = require("./middlewares/error-middleware.js");
 
 app.use(
   cors({
@@ -30,6 +31,8 @@ app.get("/", function (req, res) {
     message: "hii",
   });
 });
+
+app.use(errorMiddleware);
 
 app.use("/user", userRoute);
 app.use("/employer", employerRoute);

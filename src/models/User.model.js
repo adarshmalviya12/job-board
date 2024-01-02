@@ -4,11 +4,11 @@ const JWT = require("jsonwebtoken");
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: {
+    firstname: {
       type: String,
       required: [true, "First Name is Required!"],
     },
-    lastName: {
+    lastname: {
       type: String,
       required: [true, "Last Name is Required!"],
     },
@@ -35,9 +35,10 @@ const userSchema = new mongoose.Schema(
 );
 
 // middlewares
-userSchema.pre("save", async function () {
+userSchema.pre("save", async function (next) {
   const user = this;
-  if (!user.isModified) {
+
+  if (!user.isModified("password")) {
     return next();
   }
 
@@ -48,6 +49,8 @@ userSchema.pre("save", async function () {
   } catch (error) {
     return next(error);
   }
+
+  next();
 });
 
 //compare password
@@ -58,13 +61,9 @@ userSchema.methods.comparePassword = async function (userPassword) {
 
 //JSON WEBTOKEN
 userSchema.methods.createJWT = function () {
-  return JWT.sign(
-    { userId: this._id, role: this.role },
-    process.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1d",
-    }
-  );
+  return JWT.sign({ userId: this._id }, process.env.JWT_SECRET_KEY, {
+    expiresIn: "1d",
+  });
 };
 const User = mongoose.model("User", userSchema);
 

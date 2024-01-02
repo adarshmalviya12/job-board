@@ -3,11 +3,11 @@ const bcrypt = require("bcryptjs");
 const JWT = require("jsonwebtoken");
 
 const employerSchema = new mongoose.Schema({
-  firstName: {
+  firstname: {
     type: String,
     required: [true, "First Name is Required!"],
   },
-  lastName: {
+  lastname: {
     type: String,
     required: [true, "Last Name is Required!"],
   },
@@ -23,17 +23,18 @@ const employerSchema = new mongoose.Schema({
     select: true,
   },
   role: { type: String, default: "Employer" },
-  contact: { type: String },
-  location: { type: String },
-  about: { type: String },
-  profileUrl: { type: String },
-  jobPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Jobs" }],
+  // contact: { type: String },
+  // location: { type: String },
+  // about: { type: String },
+  // profileUrl: { type: String },
+  jobPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }],
 });
 
 // middelwares
-employerSchema.pre("save", async function () {
+employerSchema.pre("save", async function (next) {
   const user = this;
-  if (!user.isModified) {
+
+  if (!user.isModified("password")) {
     return next();
   }
 
@@ -44,6 +45,8 @@ employerSchema.pre("save", async function () {
   } catch (error) {
     return next(error);
   }
+
+  next();
 });
 
 //compare password
@@ -54,9 +57,13 @@ employerSchema.methods.comparePassword = async function (userPassword) {
 
 //JSON WEBTOKEN
 employerSchema.methods.createJWT = function () {
-  return JWT.sign({ userId: this._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: "1d",
-  });
+  return JWT.sign(
+    { userId: this._id, role: this.role, username: this.firstname },
+    process.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1d",
+    }
+  );
 };
 
 const Employer = mongoose.model("Employer", employerSchema);
