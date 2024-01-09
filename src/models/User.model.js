@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
     cvUrl: { type: String },
     jobTitle: { type: String },
     about: { type: String },
+    appliedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }],
   },
   { timestamps: true }
 );
@@ -61,9 +62,13 @@ userSchema.methods.comparePassword = async function (userPassword) {
 
 //JSON WEBTOKEN
 userSchema.methods.createJWT = function () {
-  return JWT.sign({ userId: this._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: "1d",
-  });
+  return JWT.sign(
+    { userId: this._id, role: this.role, username: this.firstname },
+    process.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1d",
+    }
+  );
 };
 const User = mongoose.model("User", userSchema);
 

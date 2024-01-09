@@ -4,18 +4,11 @@ const Job = require("../models/Jobs.model");
 const register = async (req, res, next) => {
   const { firstname, lastname, email, password } = req.body;
 
-  //validate fields
-  if (!firstname) {
-    next("First Name is required");
-  }
-  if (!email) {
-    next("Email is required");
-  }
-  if (!lastname) {
-    next("Last Name is required");
-  }
-  if (!password) {
-    next("Password is required");
+  // Validate fields
+  if (!firstname || !lastname || !email || !password) {
+    return res
+      .status(400)
+      .json({ success: false, message: "All fields are required" });
   }
 
   try {
@@ -23,7 +16,7 @@ const register = async (req, res, next) => {
 
     if (accountExist) {
       return res
-        .status(401)
+        .status(400)
         .json({ success: false, message: "Email Already Exists" });
     }
 
@@ -49,7 +42,7 @@ const register = async (req, res, next) => {
       token,
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: "Registration failed",
       error: error.message,
@@ -62,8 +55,9 @@ const signIn = async (req, res, next) => {
 
   try {
     if (!email || !password) {
-      next("please Provide a User Credentials");
-      return;
+      return res
+        .status(400)
+        .json({ success: false, message: "Please provide User Credentials" });
     }
 
     const employer = await Employer.findOne({ email }).select("+password");
@@ -81,13 +75,14 @@ const signIn = async (req, res, next) => {
         .status(401)
         .json({ success: false, message: "Invalid email or password" });
     }
+
     employer.password = undefined;
     const token = employer.createJWT();
 
     res.status(200).json({
       success: true,
       message: "Login successfully",
-      employer: {
+      user: {
         _id: employer._id,
         name: employer.firstname,
         email: employer.email,
@@ -96,7 +91,7 @@ const signIn = async (req, res, next) => {
       token,
     });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    res.status(404).json({ success: false, message: error.message });
   }
 };
 
@@ -108,7 +103,7 @@ const createJob = async (req, res) => {
 
     const isEmployer = await Employer.findById(employerId);
 
-    if (isEmployer) {
+    if (isEmployer && isEmployer.role === "Employer") {
       const job = await Job.create({
         employer: employerId,
         jobTitle,
@@ -118,9 +113,18 @@ const createJob = async (req, res) => {
         isPublished: true,
       });
 
+      await Employer.findByIdAndUpdate(
+        employerId,
+        { $push: { jobPosts: job._id } },
+        { new: true }
+      );
+
       return res.status(201).json({ success: true, job });
     } else {
-      res.status(404).json({ error: "Not found" });
+      return res.status(403).json({
+        success: false,
+        message: "Permission denied. User is not an employer.",
+      });
     }
   } catch (error) {
     return res.status(500).json({
