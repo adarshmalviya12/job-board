@@ -3,6 +3,7 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const app = express();
 const userRoute = require("./routes/user-routes.js");
+const adminRoute = require("./routes/admin-routes.js");
 const employerRoute = require("./routes/employer-routes.js");
 const errorMiddleware = require("./middlewares/error-middleware.js");
 
@@ -35,6 +36,7 @@ app.get("/", function (req, res) {
 app.use(errorMiddleware);
 
 app.use("/user", userRoute);
+app.use("/admin", adminRoute);
 app.use("/employer", employerRoute);
 
 module.exports = app;

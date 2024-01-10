@@ -1,7 +1,7 @@
 const Employer = require("../models/Employer.model");
 const Job = require("../models/Jobs.model");
 
-const register = async (req, res, next) => {
+const register = async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
 
   // Validate fields

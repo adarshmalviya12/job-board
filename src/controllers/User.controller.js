@@ -4,27 +4,22 @@ const User = require("../models/User.model.js");
 const register = async (req, res, next) => {
   const { firstname, lastname, email, password } = req.body;
 
-  //validate fileds
-
-  if (!firstname) {
-    next("First Name is required");
-  }
-  if (!email) {
-    next("Email is required");
-  }
-  if (!lastname) {
-    next("Last Name is required");
-  }
-  if (!password) {
-    next("Password is required");
+  // Validate fields
+  if (!firstname || !lastname || !email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "All fields are required",
+    });
   }
 
   try {
     const userExist = await User.findOne({ email });
 
     if (userExist) {
-      next("Email Address already exists");
-      return;
+      return res.status(401).json({
+        success: false,
+        message: "Email Address already exists",
+      });
     }
 
     const user = await User.create({
@@ -34,10 +29,9 @@ const register = async (req, res, next) => {
       password,
     });
 
-    // user token
     const token = await user.createJWT();
 
-    res.status(201).send({
+    return res.status(201).json({
       success: true,
       message: "Account created successfully",
       user: {
@@ -50,7 +44,11 @@ const register = async (req, res, next) => {
       token,
     });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
@@ -58,41 +56,49 @@ const signIn = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
-    //validation
+    // validation
     if (!email || !password) {
-      next("Please Provide a User Credentials");
-      return;
+      return res.status(400).json({
+        success: false,
+        message: "Please Provide User Credentials",
+      });
     }
 
-    // find user by email
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-      next("Invalid email or password");
-      return;
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
 
-    // compare password
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
-      next("Invalid email or password");
-      return;
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
 
     user.password = undefined;
 
     const token = user.createJWT();
 
-    res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "Login successfully",
       user,
       token,
     });
   } catch (error) {
-    console.log(error);
-    res.status(404).json({ message: error.message });
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
@@ -103,12 +109,19 @@ const user = async (req, res) => {
     role: req.user.role,
   };
 
-  res.status(200).json({ success: true, userData });
+  return res.status(200).json({ success: true, userData });
 };
 
 const getJobs = async (req, res, next) => {
   try {
+    const userId = req.user.userId;
+
     const jobs = await Job.find({ isPublished: true });
+
+    for (const job of jobs) {
+      job.hasApplied = job.application.includes(userId);
+    }
+
     return res.status(200).json({ success: true, jobs });
   } catch (error) {
     return res.status(500).json({
@@ -127,23 +140,36 @@ const applyJob = async (req, res, next) => {
     const user = await User.findById(userId);
     const job = await Job.findById(jobId);
 
-    if (user && user.role === "User" && job) {
-      await Job.findByIdAndUpdate(
-        jobId,
-        { $push: { application: user._id } },
-        { new: true }
-      );
-
-      await User.findByIdAndUpdate(userId, { $push: { appliedJobs: job._id } });
+    if (!user || user.role !== "User" || !job) {
+      return res.status(404).json({
+        success: false,
+        message: "User or Job not found, or user is not a regular user",
+      });
     }
 
-    return res
-      .status(201)
-      .json({ success: true, message: "applied jobs successfully" });
+    if (job.application.includes(user._id)) {
+      return res.status(400).json({
+        success: false,
+        message: "User has already applied for this job",
+      });
+    }
+
+    await Job.findByIdAndUpdate(
+      jobId,
+      { $push: { application: user._id } },
+      { new: true }
+    );
+
+    await User.findByIdAndUpdate(userId, { $push: { appliedJobs: job._id } });
+
+    return res.status(201).json({
+      success: true,
+      message: "Applied for the job successfully",
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Error getting job list",
+      message: "Internal Server Error",
       error: error.message,
     });
   }
