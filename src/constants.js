@@ -1,3 +1,3 @@
-const DB_NAME = "job-board";
+const DB_NAME = "jobBoard";
 
 module.exports = DB_NAME;

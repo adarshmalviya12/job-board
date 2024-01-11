@@ -107,6 +107,7 @@ const user = async (req, res) => {
     userId: req.user.userId,
     username: req.user.username,
     role: req.user.role,
+    isVerified: req.user.isVerified,
   };
 
   return res.status(200).json({ success: true, userData });

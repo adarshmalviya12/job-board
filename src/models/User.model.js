@@ -23,6 +23,10 @@ const userSchema = new mongoose.Schema(
       minlength: [6, "Password length should be greater than 6 character"],
       select: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
     role: { type: String, default: "User" },
     contact: { type: String },
     location: { type: String },
@@ -63,7 +67,12 @@ userSchema.methods.comparePassword = async function (userPassword) {
 //JSON WEBTOKEN
 userSchema.methods.createJWT = function () {
   return JWT.sign(
-    { userId: this._id, role: this.role, username: this.firstname },
+    {
+      userId: this._id,
+      role: this.role,
+      username: this.firstname,
+      isVerified: this.isVerified,
+    },
     process.env.JWT_SECRET_KEY,
     {
       expiresIn: "1d",

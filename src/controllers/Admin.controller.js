@@ -1,4 +1,5 @@
 const Admin = require("../models/Admin.model");
+const User = require("../models/User.model");
 
 const adminLogin = async (req, res, next) => {
   const { email, password } = req.body;
@@ -101,4 +102,63 @@ const adminRegister = async (req, res, next) => {
   }
 };
 
-module.exports = { adminLogin, adminRegister };
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+
+    return res.status(200).json({
+      success: true,
+      message: "List of all users",
+      users,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const updateUserStatus = async (req, res) => {
+  try {
+    const { userId, isVerified } = req.body;
+
+    // Validate input
+    if (!userId || typeof isVerified !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid input. Please provide valid userId and isVerified boolean value.",
+      });
+    }
+
+    // Update the user's verification status
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { isVerified } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User verification status updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { adminLogin, adminRegister, getAllUsers, updateUserStatus };
