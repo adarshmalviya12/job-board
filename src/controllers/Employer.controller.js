@@ -234,6 +234,44 @@ const softDeleteJob = async (req, res) => {
   }
 };
 
+const getAppliedJob = async (req, res) => {
+  try {
+    const jobId = req.params.jobId;
+
+    // Find the job by its ID
+    const job = await Job.findById(jobId);
+
+    if (!job || !job.isPublished) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    // Populate the 'application' field to get details of applied users
+    const jobWithPopulatedApplication = await Job.findById(jobId).populate(
+      "application"
+    );
+    const appliedCandidates = jobWithPopulatedApplication.application.map(
+      (user) => ({
+        userId: user._id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        // Add any other user details you want to include
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      appliedCandidates,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error getting applied candidates",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   register,
   signIn,
@@ -243,4 +281,5 @@ module.exports = {
   getJobDetails,
   editJob,
   softDeleteJob,
+  getAppliedJob,
 };

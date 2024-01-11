@@ -8,6 +8,7 @@ const {
   getJobDetails,
   editJob,
   softDeleteJob,
+  getAppliedJob,
 } = require("../controllers/Employer.controller");
 const { authenticateJwt } = require("../middlewares/auth-middleware");
 
@@ -21,5 +22,6 @@ router.get("/jobs", authenticateJwt, getJobs);
 router.get("/jobs/:jobId", authenticateJwt, getJobDetails);
 router.put("/jobs/:jobId", authenticateJwt, editJob);
 router.delete("/jobs/:jobId", authenticateJwt, softDeleteJob);
+router.get("/jobs/:jobId/applied-candidates", authenticateJwt, getAppliedJob);
 
 module.exports = router;
