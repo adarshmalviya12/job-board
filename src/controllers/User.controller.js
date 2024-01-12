@@ -113,6 +113,36 @@ const user = async (req, res) => {
   return res.status(200).json({ success: true, userData });
 };
 
+const getJobsNotification = async (req, res, next) => {
+  try {
+    const userId = req.user.userId; // Assuming userId is attached to the request by middleware.
+
+    // Fetch published jobs
+    const jobs = await Job.find({ isPublished: true });
+
+    // Fetch applied job IDs for the user
+    const user = await User.findById(userId).select("appliedJobs");
+
+    // Map applied job IDs to a Set for quick lookup
+    const userAppliedJobsSet = new Set(user.appliedJobs.map(String));
+
+    // Update each job to include an 'isApplied' field in the response
+    const jobsWithApplicationStatus = jobs.map((job) => ({
+      ...job._doc,
+      isApplied: userAppliedJobsSet.has(String(job._id)),
+    }));
+
+    return res
+      .status(200)
+      .json({ success: true, jobs: jobsWithApplicationStatus });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error getting job list",
+      error: error.message,
+    });
+  }
+};
 const getJobs = async (req, res, next) => {
   try {
     const userId = req.user.userId; // Assuming userId is attached to the request by middleware.
@@ -187,4 +217,11 @@ const applyJob = async (req, res, next) => {
   }
 };
 
-module.exports = { register, signIn, user, getJobs, applyJob };
+module.exports = {
+  register,
+  signIn,
+  user,
+  getJobs,
+  applyJob,
+  getJobsNotification,
+};
