@@ -135,6 +135,46 @@ const createJob = async (req, res) => {
   }
 };
 
+const createJobNotification = async (req, res) => {
+  try {
+    const { jobTitle, location, vacancies, desc } = req.body;
+
+    const employerId = req.user.userId;
+
+    const isEmployer = await Employer.findById(employerId);
+
+    if (isEmployer && isEmployer.role === "Employer") {
+      const job = await Job.create({
+        employer: employerId,
+        jobTitle,
+        location,
+        vacancies,
+        desc,
+        isPublished: true,
+      });
+
+      await Employer.findByIdAndUpdate(
+        employerId,
+        { $push: { jobPosts: job._id } },
+        { new: true }
+      );
+
+      return res.status(201).json({ success: true, job });
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: "Permission denied. User is not an employer.",
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error creating job post",
+      error: error.message,
+    });
+  }
+};
+
 const user = async (req, res) => {
   const userData = {
     userId: req.user.userId,
@@ -146,6 +186,21 @@ const user = async (req, res) => {
 };
 
 const getJobs = async (req, res) => {
+  try {
+    const employerId = req.user.userId;
+
+    const jobs = await Job.find({ employer: employerId, isPublished: true });
+
+    return res.status(200).json({ success: true, jobs });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error getting job list",
+      error: error.message,
+    });
+  }
+};
+const getJobsNotification = async (req, res) => {
   try {
     const employerId = req.user.userId;
 
@@ -276,6 +331,8 @@ module.exports = {
   register,
   signIn,
   createJob,
+  createJobNotification,
+  getJobsNotification,
   getJobs,
   user,
   getJobDetails,
