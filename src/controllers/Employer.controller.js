@@ -1,5 +1,6 @@
 const Employer = require("../models/Employer.model");
-const Job = require("../models/Jobs.model");
+const JobNotification = require("../models/jobNotification.model.js");
+const Job = require("../models/Jobs.model.js");
 
 const register = async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
@@ -144,7 +145,7 @@ const createJobNotification = async (req, res) => {
     const isEmployer = await Employer.findById(employerId);
 
     if (isEmployer && isEmployer.role === "Employer") {
-      const job = await Job.create({
+      const job = await JobNotification.create({
         employer: employerId,
         jobTitle,
         location,
@@ -155,7 +156,7 @@ const createJobNotification = async (req, res) => {
 
       await Employer.findByIdAndUpdate(
         employerId,
-        { $push: { jobPosts: job._id } },
+        { $push: { JobNotifications: job._id } },
         { new: true }
       );
 
@@ -200,11 +201,15 @@ const getJobs = async (req, res) => {
     });
   }
 };
+
 const getJobsNotification = async (req, res) => {
   try {
     const employerId = req.user.userId;
 
-    const jobs = await Job.find({ employer: employerId, isPublished: true });
+    const jobs = await JobNotification.find({
+      employer: employerId,
+      isPublished: true,
+    });
 
     return res.status(200).json({ success: true, jobs });
   } catch (error) {

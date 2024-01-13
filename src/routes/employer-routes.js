@@ -10,6 +10,7 @@ const {
   softDeleteJob,
   getAppliedJob,
   getJobsNotification,
+  createJobNotification,
 } = require("../controllers/Employer.controller");
 const { authenticateJwt } = require("../middlewares/auth-middleware");
 
@@ -19,7 +20,7 @@ router.post("/register", register);
 router.post("/signin", signIn);
 router.get("/user", authenticateJwt, user);
 router.post("/create-job", authenticateJwt, createJob);
-router.post("/create-jobNotification", authenticateJwt, createJob);
+router.post("/create-jobNotification", authenticateJwt, createJobNotification);
 router.get("/jobs", authenticateJwt, getJobs);
 router.get("/jobs-notification", authenticateJwt, getJobsNotification);
 router.get("/jobs/:jobId", authenticateJwt, getJobDetails);

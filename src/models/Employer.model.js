@@ -28,6 +28,9 @@ const employerSchema = new mongoose.Schema({
   // about: { type: String },
   // profileUrl: { type: String },
   jobPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }],
+  JobNotifications: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "JobNotification" },
+  ],
 });
 
 // middelwares
